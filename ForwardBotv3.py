@@ -4,9 +4,6 @@ import re
 import aiosqlite
 import os  # To check for database existence
 import asyncio  # Import asyncio to manage the event loop
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # Define the database path (ensure it is a permanent location)
 DB_PATH = "forwarding.db"  # This will store the database in the current directory
@@ -162,6 +159,22 @@ async def on_message(message):
                         # If no matching emoji is found in any server, replace with a fallback
                         content = content.replace(f"<:{emoji_name}:{emoji_id}>", f":{emoji_name}:")
             
+            # Process the embed content for custom emojis
+            if message.embeds:
+                for embed in message.embeds:
+                    # Check title, description, fields, and footer for emojis
+                    if embed.title:
+                        embed.title = re.sub(emoji_pattern, lambda m: f"<:{m.group(1)}:{m.group(2)}>", embed.title)
+                    if embed.description:
+                        embed.description = re.sub(emoji_pattern, lambda m: f"<:{m.group(1)}:{m.group(2)}>", embed.description)
+                    for field in embed.fields:
+                        if field.name:
+                            field.name = re.sub(emoji_pattern, lambda m: f"<:{m.group(1)}:{m.group(2)}>", field.name)
+                        if field.value:
+                            field.value = re.sub(emoji_pattern, lambda m: f"<:{m.group(1)}:{m.group(2)}>", field.value)
+                    if embed.footer.text:
+                        embed.footer.text = re.sub(emoji_pattern, lambda m: f"<:{m.group(1)}:{m.group(2)}>", embed.footer.text)
+
             # Forward the message to the target channel
             if isinstance(target_channel, discord.TextChannel):
                 await target_channel.send(
