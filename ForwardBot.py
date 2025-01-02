@@ -4,6 +4,9 @@ import re
 import aiosqlite
 import os  # To check for database existence
 import asyncio  # Import asyncio to manage the event loop
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Define the database path (ensure it is a permanent location)
 DB_PATH = "forwarding.db"  # This will store the database in the current directory
@@ -190,6 +193,17 @@ async def on_message(message):
                     files=message.attachments,
                     allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False)
                 )
+
+            # Forward stickers if present
+            if message.stickers:
+                for sticker in message.stickers:
+                    await target_channel.send(sticker=sticker)
+
+            # Forward all embeds
+            if message.embeds:
+                for embed in message.embeds:
+                    await target_channel.send(embed=embed)
+
         else:
             print(f"Error: Target channel with ID {target_channel_id} not found.")
     else:
@@ -218,9 +232,11 @@ async def removesource(ctx, channel: discord.TextChannel):
 
 # Initialize the database before starting the bot
 async def start_bot():
-    await init_db()  # Initialize the database
+    await init_db()
     token = os.getenv("DISCORD_BOT_TOKEN")
-    await bot.start(token) 
+    if not token:
+        raise ValueError("No DISCORD_BOT_TOKEN found in environment variables")
+    await bot.start(token)
 
 # Run the bot (now awaiting the start_bot coroutine)
 asyncio.run(start_bot())
